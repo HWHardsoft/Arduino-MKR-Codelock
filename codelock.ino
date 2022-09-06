@@ -73,10 +73,10 @@
 #define TS_MAXX 3700
 #define TS_MAXY 3600
 
-// enable this line for AT-Touch MKR Version 01.xx
+// enable this line for AZ-Touch MKR Version 01.xx
 // #define touch_yellow_header_24_inch 
 
-// enable this line for AT-Touch MKR Version 02.xx
+// enable this line for AZ-Touch MKR Version 02.xx
 #define touch_yellow_header_28_inch
 /*______End of Calibration______*/
 
