@@ -1,7 +1,7 @@
 /*
  *  Application note: Simple Keylock / Keypad for ArduiTouch and Arduino MKR  
- *  Version 1.0
- *  Copyright (C) 2019  Hartmut Wendt  www.zihatec.de
+ *  Version 1.1
+ *  Copyright (C) 2022  Hartmut Wendt  www.zihatec.de
  *  
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -31,22 +31,37 @@
 /*______End of Libraries_______*/
 
 
-/*__Pin definitions for the Arduino MKR__*/
-#define TFT_CS   A3
-#define TFT_DC   0
-#define TFT_MOSI 8
-//#define TFT_RST  22
-#define TFT_CLK  9
-#define TFT_MISO 10
-#define TFT_LED  A2  
+/*__Pin definitions for the Arduino Boards__*/
+#if defined(ARDUINO_SAMD_NANO_33_IOT) || defined(ARDUINO_ARCH_NRF52840) || defined(ARDUINO_NANO_RP2040_CONNECT)  
+  // pin definitions for Arduino Nano 33 IoT, 33 BLE (SENSE), RP2040
+  #define TFT_CS   10
+  #define TFT_DC   2
+  #define TFT_MOSI 11
+  #define TFT_CLK  13
+  #define TFT_MISO 12
+  #define TFT_LED  A2  
+  #define HAVE_TOUCHPAD
+  #define TOUCH_CS A0
+  #define TOUCH_IRQ A7
 
+  #define BEEPER A3
+  #define RELAY 3   // optional relay output 
 
-#define HAVE_TOUCHPAD
-#define TOUCH_CS A4
-#define TOUCH_IRQ 1
-
-#define BEEPER 2
-#define RELAY A0   // optional relay output 
+#else
+  // pin definitions for Arduino MKR Boards 
+  #define TFT_CS   A3
+  #define TFT_DC   0
+  #define TFT_MOSI 8
+  #define TFT_CLK  9
+  #define TFT_MISO 10
+  #define TFT_LED  A2  
+  #define HAVE_TOUCHPAD
+  #define TOUCH_CS A4
+  #define TOUCH_IRQ 1
+  
+  #define BEEPER 2
+  #define RELAY A0   // optional relay output 
+#endif  
 /*_______End of definitions______*/
 
  
@@ -57,6 +72,12 @@
 #define TS_MINY 470
 #define TS_MAXX 3700
 #define TS_MAXY 3600
+
+// enable this line for AT-Touch MKR Version 01.xx
+// #define touch_yellow_header_24_inch 
+
+// enable this line for AT-Touch MKR Version 02.xx
+#define touch_yellow_header_28_inch
 /*______End of Calibration______*/
 
 
@@ -88,10 +109,10 @@ int RELAYTMR = 0; // Timer for relay control
 
 void setup() {
   Serial.begin(115200); //Use serial monitor for debugging
-
+  delay(1000);
   pinMode(TFT_LED, OUTPUT); // define as output for backlight control
-  pinMode(RELAY, OUTPUT);   // define as output for optional relay
-  digitalWrite(RELAY, LOW); // LOW to turn relay off   
+  //pinMode(RELAY, OUTPUT);   // define as output for optional relay
+  //digitalWrite(RELAY, LOW); // LOW to turn relay off   
 
   Serial.println("Init TFT and Touch...");
   tft.begin();
@@ -108,6 +129,8 @@ void setup() {
   draw_BoxNButtons(); 
   digitalWrite(TFT_LED, LOW);    // LOW to turn backlight on; 
 }
+
+
 
 void loop() {
   // check touch screen for new events
@@ -165,12 +188,19 @@ void loop() {
 bool Touch_Event() {
   p = touch.getPoint(); 
   delay(1);
-  #ifdef touch_yellow_header
-    p.x = map(p.x, TS_MINX, TS_MAXX, 320, 0); // yellow header
-  #else
-    p.x = map(p.x, TS_MINX, TS_MAXX, 0, 320); // black header
-  #endif
+#ifdef touch_yellow_header_28_inch
+  // 2.8 inch TFT with yellow header
+  p.x = map(p.x, TS_MINX, TS_MAXX, 320, 0);
+  p.y = map(p.y, TS_MINY, TS_MAXY, 240, 0);
+#elif defined(touch_yellow_header_24_inch)
+  // 2.4 inch TFT with yellow header
+  p.x = map(p.x, TS_MINX, TS_MAXX, 320, 0);
   p.y = map(p.y, TS_MINY, TS_MAXY, 0, 240);
+#else
+  // 2.4 inch TFT with black header
+  p.x = map(p.x, TS_MINX, TS_MAXX, 0, 320);
+  p.y = map(p.y, TS_MINY, TS_MAXY, 0, 240);
+#endif
   if (p.z > MINPRESSURE) return true;  
   return false;  
 }
